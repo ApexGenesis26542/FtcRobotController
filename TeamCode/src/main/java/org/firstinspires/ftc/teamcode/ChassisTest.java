@@ -73,16 +73,16 @@ public class ChassisTest extends LinearOpMode {
             }
 
             // Get joystick input values
-            drive = -gamepad1.left_stick_y * n_drive_multiplier;  // Reduce drive rate to 75%.
-            strafe = -gamepad1.left_stick_x * n_strafe_multiplier;  // Reduce strafe rate to 75%.
-            turn = gamepad1.right_stick_x * n_turn_multiplier;  // Reduce turn rate to 66%.
+            drive = -gamepad1.left_stick_y * n_drive_multiplier;  // Forward/Backward (Y-axis) using left stick
+            strafe = -gamepad1.left_stick_x * n_strafe_multiplier;  // Strafing (X-axis) using left stick
+            turn = -gamepad1.right_stick_x * n_turn_multiplier;  // Turning (X-axis) using right stick
 
             // Display telemetry data
             telemetry.addData("Details", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             telemetry.update();
 
             // Move the robot using the calculated motor powers
-            moveRobot(-turn, drive, strafe);
+            moveRobot(strafe, drive, turn);
 
             // Wait for 10ms before updating again
             sleep(10);
@@ -92,16 +92,16 @@ public class ChassisTest extends LinearOpMode {
     /**
      * Move the robot using the calculated motor powers.
      *
-     * @param x  Desired x-axis motion (-1 to +1)
-     * @param y  Desired y-axis motion (-1 to +1)
-     * @param yaw Desired yaw motion (-1 to +1)
+     * @param x   Desired strafe motion (-1 to +1)
+     * @param y   Desired forward/backward motion (-1 to +1)
+     * @param yaw Desired turning motion (-1 to +1)
      */
     public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers.
-        double leftFrontPower = x + y - yaw;
-        double rightFrontPower = x - y + yaw;
-        double leftBackPower = x - y - yaw;
-        double rightBackPower = x + y + yaw;
+        double leftFrontPower = y + x - yaw;
+        double rightFrontPower = y - x + yaw;
+        double leftBackPower = y - x - yaw;
+        double rightBackPower = y + x + yaw;
 
         // Normalize wheel powers to be less than 1.0
         double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
