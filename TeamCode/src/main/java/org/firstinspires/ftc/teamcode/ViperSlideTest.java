@@ -12,8 +12,8 @@ public class ViperSlideTest extends LinearOpMode {
     public void runOpMode() {
         DcMotor leftViper = hardwareMap.get(DcMotor.class, "leftviper");
         DcMotor rightViper = hardwareMap.get(DcMotor.class, "rightviper");
-        //leftViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //rightViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //leftViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         //rightViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT)
         waitForStart();
