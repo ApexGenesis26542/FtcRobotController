@@ -18,6 +18,8 @@ public class ViperSlideTest extends LinearOpMode {
         //rightViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT)
         waitForStart();
         while (opModeIsActive()) {
+            leftViper.setPower(0.09);
+            rightViper.setPower(0.09);
             while (gamepad1.dpad_up) {
                 leftViper.setDirection(DcMotorSimple.Direction.FORWARD);
                 rightViper.setDirection(DcMotorSimple.Direction.FORWARD);
