@@ -11,37 +11,26 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 @TeleOp
 public class FullDrive extends LinearOpMode {
 
-    // Define motor objects for each wheel
-    private DcMotor frontLeft;
-    private DcMotor frontRight;
-    private DcMotor backLeft;
-    private DcMotor backRight;
-    // Define motor objects for the viper slides
-    private DcMotor leftViper;
-    private DcMotor rightViper;
+    // Define motor objects for each wheel and viper slides
+    private DcMotor frontLeft, frontRight, backLeft, backRight, leftViper, rightViper;
 
     @Override
     public void runOpMode() {
-        // Initialize the motors for chassis
+        // Initialize the motors for chassis and viper slides
         frontLeft = hardwareMap.get(DcMotor.class, "frontleft");
         frontRight = hardwareMap.get(DcMotor.class, "frontright");
         backLeft = hardwareMap.get(DcMotor.class, "backleft");
         backRight = hardwareMap.get(DcMotor.class, "backright");
-
-        // Initialize the motors for viper slides
         leftViper = hardwareMap.get(DcMotor.class, "leftviper");
         rightViper = hardwareMap.get(DcMotor.class, "rightviper");
 
         // Set zero power behavior for each motor to BRAKE, which helps hold the position when no power is applied
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightViper.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, leftViper, rightViper};
+        for (DcMotor motor : motors) {
+            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
 
-        // Set motor directions
-        // Reversing the direction of the right-side motors to ensure correct movement
+        // Set motor directions to ensure correct movement of the robot
         frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         backRight.setDirection(DcMotorSimple.Direction.FORWARD);
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -69,31 +58,36 @@ public class FullDrive extends LinearOpMode {
      */
     private void handleChassisMovement() {
         // Define multipliers for drive, strafe, and turn rates
-        double o_drive_multiplier = 0.60; // Normal drive speed multiplier
-        double o_strafe_multiplier = 0.60; // Normal strafe speed multiplier
-        double o_turn_multiplier = (double) 5 / 12; // Normal turn speed multiplier
-        double n_drive_multiplier = o_drive_multiplier;
-        double n_strafe_multiplier = o_strafe_multiplier;
-        double n_turn_multiplier = o_turn_multiplier;
+        double driveMultiplier = 0.60;
+        double strafeMultiplier = 0.60;
+        double turnMultiplier = 5.0 / 12.0;
 
         // Check if turbo mode is enabled (using bumpers)
-        // Turbo mode increases the speed multipliers for faster movement
+        // Turbo mode increases the speed of the robot
         if (gamepad1.right_bumper || gamepad1.left_bumper) {
-            n_drive_multiplier = 1;
-            n_strafe_multiplier = 1;
-            n_turn_multiplier = 0.89;
+            driveMultiplier = 1.0;
+            strafeMultiplier = 1.0;
+            turnMultiplier = 0.89;
         }
 
-        // Get joystick input values
-        // The left stick controls forward/backward and strafing
-        // The right stick controls turning
-        double drive = -gamepad1.left_stick_y * n_drive_multiplier;  // Forward/Backward (Y-axis) using left stick
-        double strafe = -gamepad1.left_stick_x * n_strafe_multiplier;  // Strafing (X-axis) using left stick
-        double turn = -gamepad1.right_stick_x * n_turn_multiplier;  // Turning (X-axis) using right stick
+        // Get joystick input values with exponential scaling for finer control at low speeds
+        // Applying cubic transformation to provide smoother control at lower speeds
+        double drive = -Math.pow(gamepad1.left_stick_y, 3) * driveMultiplier;  // Forward/Backward motion
+        double strafe = -Math.pow(gamepad1.left_stick_x, 3) * strafeMultiplier; // Left/Right strafing motion
+        double turn = -Math.pow(gamepad1.right_stick_x, 3) * turnMultiplier;    // Rotational (turning) motion
 
-        // Display telemetry data for debugging and feedback
-        telemetry.addData("Details", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-        telemetry.update();
+        // Deadzone adjustments for joysticks to prevent drift
+        if (Math.abs(drive) < 0.05) drive = 0;
+        if (Math.abs(strafe) < 0.05) strafe = 0;
+        if (Math.abs(turn) < 0.05) turn = 0;
+
+        // Precision mode for fine adjustments using 'A' button
+        // Precision mode reduces the speed multipliers to make small adjustments easier
+        if (gamepad1.a) {
+            driveMultiplier *= 0.4;
+            strafeMultiplier *= 0.4;
+            turnMultiplier *= 0.4;
+        }
 
         // Move the robot using the calculated motor powers
         moveRobot(strafe, drive, turn);
@@ -114,49 +108,60 @@ public class FullDrive extends LinearOpMode {
         double rightBackPower = y + x + yaw;
 
         // Normalize wheel powers to ensure they do not exceed 1.0
-        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-        max = Math.max(max, Math.abs(leftBackPower));
-        max = Math.max(max, Math.abs(rightBackPower));
+        // Find the maximum power value and divide all by that value if it exceeds 1.0
+        double max = Math.max(1.0, Math.max(Math.abs(leftFrontPower), Math.max(Math.abs(rightFrontPower), Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower)))));
 
-        if (max > 1.0) {
-            leftFrontPower /= max;
-            rightFrontPower /= max;
-            leftBackPower /= max;
-            rightBackPower /= max;
+        leftFrontPower /= max;
+        rightFrontPower /= max;
+        leftBackPower /= max;
+        rightBackPower /= max;
+
+        // Ramp up power gradually to avoid jerky movements
+        // This helps in reducing sudden jumps in speed, providing smoother control
+        frontLeft.setPower(gradualPower(frontLeft.getPower(), leftFrontPower, 0.1));
+        frontRight.setPower(gradualPower(frontRight.getPower(), rightFrontPower, 0.1));
+        backLeft.setPower(gradualPower(backLeft.getPower(), leftBackPower, 0.1));
+        backRight.setPower(gradualPower(backRight.getPower(), rightBackPower, 0.1));
+    }
+
+    /**
+     * Gradually adjust power to avoid sudden changes.
+     *
+     * @param currentPower Current motor power
+     * @param targetPower Target motor power
+     * @param increment The maximum allowed change in power per cycle
+     * @return Adjusted power value
+     */
+    private double gradualPower(double currentPower, double targetPower, double increment) {
+        // Increment or decrement power in small steps to avoid sudden jerks
+        if (currentPower < targetPower) {
+            return Math.min(currentPower + increment, targetPower);
+        } else if (currentPower > targetPower) {
+            return Math.max(currentPower - increment, targetPower);
         }
-
-        // Send the calculated power values to the wheels
-        frontLeft.setPower(leftFrontPower);
-        frontRight.setPower(rightFrontPower);
-        backLeft.setPower(leftBackPower);
-        backRight.setPower(rightBackPower);
-
-        // Display motor powers for debugging and monitoring purposes
-        telemetry.addData("Motor Powers", "LF: %.2f, RF: %.2f, LB: %.2f, RB: %.2f", leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
-        telemetry.update();
+        return targetPower;
     }
 
     /**
      * Handle viper slide movement using dpad inputs.
      */
     private void handleViperSlides() {
+        double viperPower = 0.05; // Default power to hold position to prevent sliding due to gravity
         if (gamepad1.dpad_up) {
-            // Move viper slides upwards with reduced power for controlled movement
-            leftViper.setPower(0.3);
-            rightViper.setPower(0.3);
+            viperPower = 0.3;  // Move viper slides upwards
         } else if (gamepad1.dpad_down) {
-            // Move viper slides downwards with more power
-            leftViper.setPower(-0.5);
-            rightViper.setPower(-0.5);
-        } else {
-            // Apply a small power to hold the position and prevent sagging due to gravity
-            leftViper.setPower(0.05);
-            rightViper.setPower(0.05);
+            viperPower = -0.5; // Move viper slides downwards
         }
 
-        // Display telemetry data for viper slides to monitor their status
-        telemetry.addData("Left Viper Power", leftViper.getPower());
-        telemetry.addData("Right Viper Power", rightViper.getPower());
-        telemetry.update();
+        // Set power for both viper slide motors
+        leftViper.setPower(viperPower);
+        rightViper.setPower(viperPower);
+
+        // Precision mode for viper slides using 'X' button
+        // Reduces the power to half for finer control of slide movement
+        if (gamepad1.x) {
+            leftViper.setPower(viperPower * 0.5);
+            rightViper.setPower(viperPower * 0.5);
+        }
     }
 }
