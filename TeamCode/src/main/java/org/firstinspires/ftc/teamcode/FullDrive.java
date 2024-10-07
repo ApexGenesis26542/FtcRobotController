@@ -146,11 +146,18 @@ public class FullDrive extends LinearOpMode {
      * Handle viper slide movement using dpad inputs.
      */
     private void handleViperSlides() {
-        double viperPower = 0.05; // Default power to hold position to prevent sliding due to gravity
+        double viperPower = 0.0; // Default power is zero to prevent unintended movement
         if (gamepad1.dpad_up) {
             viperPower = 0.3;  // Move viper slides upwards
         } else if (gamepad1.dpad_down) {
             viperPower = -0.5; // Move viper slides downwards
+        } else {
+            viperPower = 0.05; // Hold position to prevent sliding due to gravity
+        }
+
+        // Turbo mode increases viper slide power to 1.0 for faster movement
+        if ((gamepad1.right_bumper || gamepad1.left_bumper) && (gamepad1.dpad_up || gamepad1.dpad_down)) {
+            viperPower = Math.signum(viperPower) * 1.0;
         }
 
         // Set power for both viper slide motors
