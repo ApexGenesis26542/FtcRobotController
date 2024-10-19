@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 public class FullDrive extends LinearOpMode {
 
     // Define motor objects for each wheel and viper slides
-    private DcMotor frontLeft, frontRight, backLeft, backRight, leftViper, rightViper;
+    private DcMotor frontLeft, frontRight, backLeft, backRight, leftViper, rightViper, leftFirst, rightFirst;
 
     @Override
     public void runOpMode() {
@@ -23,9 +23,11 @@ public class FullDrive extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "backright");
         leftViper = hardwareMap.get(DcMotor.class, "leftviper");
         rightViper = hardwareMap.get(DcMotor.class, "rightviper");
+        leftFirst = hardwareMap.get(DcMotor.class, "firstleft");
+        rightFirst = hardwareMap.get(DcMotor.class, "firstright");
 
         // Set zero power behavior for each motor to BRAKE, which helps hold the position when no power is applied
-        DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, leftViper, rightViper};
+        DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, leftViper, rightViper, leftFirst, rightFirst};
         for (DcMotor motor : motors) {
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
@@ -48,6 +50,8 @@ public class FullDrive extends LinearOpMode {
             handleChassisMovement();
             // Handle viper slide movement using dpad
             handleViperSlides();
+            // Handle first viper slides using dpad left and right
+            handleFirstViperSlides();
             // Wait for 10ms before updating again to prevent rapid looping
             sleep(10);
         }
@@ -128,8 +132,8 @@ public class FullDrive extends LinearOpMode {
      * Gradually adjust power to avoid sudden changes.
      *
      * @param currentPower Current motor power
-     * @param targetPower Target motor power
-     * @param increment The maximum allowed change in power per cycle
+     * @param targetPower  Target motor power
+     * @param increment    The maximum allowed change in power per cycle
      * @return Adjusted power value
      */
     private double gradualPower(double currentPower, double targetPower, double increment) {
@@ -157,7 +161,7 @@ public class FullDrive extends LinearOpMode {
 
         // Turbo mode increases viper slide power to 1.0 for faster movement
         if ((gamepad1.right_bumper || gamepad1.left_bumper) && (gamepad1.dpad_up || gamepad1.dpad_down)) {
-            viperPower = Math.signum(viperPower) * 1.0;
+            viperPower = Math.signum(viperPower);
         }
 
         // Set power for both viper slide motors
@@ -169,6 +173,36 @@ public class FullDrive extends LinearOpMode {
         if (gamepad1.x) {
             leftViper.setPower(viperPower * 0.5);
             rightViper.setPower(viperPower * 0.5);
+        }
+    }
+
+    /**
+     * Handle first viper slide movement using dpad left and right inputs.
+     */
+    private void handleFirstViperSlides() {
+        double firstViperPower = 0.0; // Default power is zero to prevent unintended movement
+        if (gamepad1.dpad_right) {
+            firstViperPower = 0.3; // Extend first viper slides
+        } else if (gamepad1.dpad_left) {
+            firstViperPower = -0.3; // Retract first viper slides
+        } else {
+            firstViperPower = 0.05; // Hold position to prevent sliding due to gravity
+        }
+
+        // Turbo mode increases first viper slide power to 1.0 for faster movement
+        if ((gamepad1.right_bumper || gamepad1.left_bumper) && (gamepad1.dpad_right || gamepad1.dpad_left)) {
+            firstViperPower = Math.signum(firstViperPower);
+        }
+
+        // Set power for both first viper slide motors
+        leftFirst.setPower(firstViperPower);
+        rightFirst.setPower(firstViperPower);
+
+        // Precision mode for first viper slides using 'X' button
+        // Reduces the power to half for finer control of slide movement
+        if (gamepad1.x) {
+            leftFirst.setPower(firstViperPower * 0.5);
+            rightFirst.setPower(firstViperPower * 0.5);
         }
     }
 }
