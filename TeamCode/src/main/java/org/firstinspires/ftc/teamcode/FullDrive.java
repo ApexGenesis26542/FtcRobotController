@@ -14,10 +14,7 @@ public class FullDrive extends LinearOpMode {
 
     // Define motor objects for each wheel and twin tower
     private DcMotor frontLeft, frontRight, backLeft, backRight, twinTowerMotor;
-    private Servo rotator;
-    private Servo geckowheel;
-    private boolean geckowheelEnabled = false; // Variable to track geckowheel state
-    private boolean geckowheelReverseEnabled = false; // Variable to track reverse geckowheel state
+    private Servo rotator, geckowheel, angler;
 
     @Override
     public void runOpMode() {
@@ -29,6 +26,8 @@ public class FullDrive extends LinearOpMode {
         twinTowerMotor = hardwareMap.get(DcMotor.class, "twintower");
         rotator = hardwareMap.get(Servo.class, "rotator");
         geckowheel = hardwareMap.get(Servo.class, "geckowheel");
+        angler = hardwareMap.get(Servo.class, "angler");
+        angler.setDirection(Servo.Direction.REVERSE);
 
         // Set zero power behavior for each motor to BRAKE, which helps hold the position when no power is applied
         DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, twinTowerMotor};
@@ -187,12 +186,19 @@ public class FullDrive extends LinearOpMode {
         }
         if (gamepad1.a){
             rotator.setPosition(0);
+            angler.setPosition(0);
         }
         if (gamepad1.dpad_left){
             geckowheel.setPosition(1);
         }
         if (gamepad1.dpad_right){
             geckowheel.setPosition(-1);
+        }
+        if (gamepad1.x){
+            angler.setPosition((double) 90/300);
+        }
+        if (gamepad1.y){
+            angler.setPosition(0);
         }
     }
 }
