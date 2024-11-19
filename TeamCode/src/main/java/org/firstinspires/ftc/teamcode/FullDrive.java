@@ -44,7 +44,7 @@ public class FullDrive extends LinearOpMode {
         // Display message to user to indicate that the robot is ready to start
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
-
+        angler.setPosition(0.3711);
         // Wait for user to start op mode
         waitForStart();
 
@@ -178,26 +178,26 @@ public class FullDrive extends LinearOpMode {
      * Handle intake/outtake mechanism using dpad inputs.
      */
     private void handleIntakeOutake() {
-        if (gamepad1.dpad_up){
-            rotator.setPosition((double) 180/300);
+        if (gamepad1.dpad_up) {
+            rotator.setPosition((double) 180 / 300);
         }
-        if (gamepad1.dpad_down){
-            rotator.setPosition((double) 0/300);
+        if (gamepad1.dpad_down) {
+            rotator.setPosition((double) 0 / 300);
         }
-        if (gamepad1.a){
+        if (gamepad1.a) {
             rotator.setPosition(0);
             angler.setPosition(0);
         }
-        if (gamepad1.dpad_left){
+        if (gamepad1.dpad_left) {
             geckowheel.setPosition(1);
         }
-        if (gamepad1.dpad_right){
+        if (gamepad1.dpad_right) {
             geckowheel.setPosition(-1);
         }
-        if (gamepad1.x){
-            angler.setPosition((double) 90/300);
+        if (gamepad1.x) {
+            angler.setPosition((double) 90 / 300);
         }
-        if (gamepad1.y){
+        if (gamepad1.y) {
             angler.setPosition(0);
         }
     }
