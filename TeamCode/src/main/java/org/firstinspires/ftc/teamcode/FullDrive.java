@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -13,7 +14,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class FullDrive extends LinearOpMode {
 
     // Define motor objects for each wheel and twin tower
-    private DcMotor frontLeft, frontRight, backLeft, backRight, twinTowerMotor;
+    private DcMotor frontLeft, frontRight, backLeft, backRight;
+    private DcMotorEx twinTowerMotor;
     private Servo rotator, geckowheel, angler;
 
     @Override
@@ -23,7 +25,7 @@ public class FullDrive extends LinearOpMode {
         frontRight = hardwareMap.get(DcMotor.class, "frontright");
         backLeft = hardwareMap.get(DcMotor.class, "backleft");
         backRight = hardwareMap.get(DcMotor.class, "backright");
-        twinTowerMotor = hardwareMap.get(DcMotor.class, "twintower");
+        twinTowerMotor = hardwareMap.get(DcMotorEx.class, "twintower");
         rotator = hardwareMap.get(Servo.class, "rotator");
         geckowheel = hardwareMap.get(Servo.class, "geckowheel");
         angler = hardwareMap.get(Servo.class, "angler");
@@ -41,6 +43,10 @@ public class FullDrive extends LinearOpMode {
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE); // Reverse direction for left side motors
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        // Configure the twin tower motor to use the encoder for more precise control
+        twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        twinTowerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // Display message to user to indicate that the robot is ready to start
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
@@ -57,8 +63,8 @@ public class FullDrive extends LinearOpMode {
             handleIntakeOutake();
 
             // Update the telemetry with current chassis and twin tower positions
-            telemetry.addData("Chassis Left Motor Position", frontLeft.getCurrentPosition());
-            telemetry.addData("Chassis Right Motor Position", frontRight.getCurrentPosition());
+
+
             telemetry.addData("Twin Tower Motor Position", twinTowerMotor.getCurrentPosition());
             telemetry.update();
 
@@ -162,10 +168,17 @@ public class FullDrive extends LinearOpMode {
     private void handleTwinTower() {
         // Use right trigger to move the twin tower motor forward
         if (gamepad1.right_trigger > 0) {
-            twinTowerMotor.setPower(gamepad1.right_trigger / 1.5); // Scale down the power for smooth control
-            // Use left trigger to move the twin tower motor backward
-        } else if (gamepad1.left_trigger > 0) {
-            twinTowerMotor.setPower(-gamepad1.left_trigger / 2); // Scale down the power for smooth control
+            int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger / 1.5 * 1993.6); // Use encoder PPR value to calculate target
+            twinTowerMotor.setTargetPosition(targetPosition);
+            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            twinTowerMotor.setPower(1.0);
+        }
+        // Use left trigger to move the twin tower motor backward
+        else if (gamepad1.left_trigger > 0) {
+            int targetPosition = twinTowerMotor.getCurrentPosition() - (int) (gamepad1.left_trigger / 1.5 * 1993.6); // Use encoder PPR value to calculate target
+            twinTowerMotor.setTargetPosition(targetPosition);
+            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            twinTowerMotor.setPower(1.0);
         } else {
             twinTowerMotor.setPower(0); // Stop the motor if no trigger is pressed
         }
