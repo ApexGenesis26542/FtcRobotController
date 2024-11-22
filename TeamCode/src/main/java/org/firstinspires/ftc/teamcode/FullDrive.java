@@ -17,6 +17,8 @@ public class FullDrive extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotorEx twinTowerMotor;
     private Servo rotator, geckowheel, angler;
+    private boolean isIntakeToggled = false;
+    private boolean lastBState = false;
 
     @Override
     public void runOpMode() {
@@ -29,28 +31,25 @@ public class FullDrive extends LinearOpMode {
         rotator = hardwareMap.get(Servo.class, "rotator");
         geckowheel = hardwareMap.get(Servo.class, "geckowheel");
         angler = hardwareMap.get(Servo.class, "angler");
-        angler.setDirection(Servo.Direction.REVERSE);
-
+        twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        angler.setDirection(Servo.Direction.REVERSE); // Set the angler servo to reverse direction
+        twinTowerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // Set the motor to RUN_USING_ENCODER when not moving to a specific position
         // Set zero power behavior for each motor to BRAKE, which helps hold the position when no power is applied
         DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, twinTowerMotor};
         for (DcMotor motor : motors) {
             motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
-        // Set motor directions to ensure correct movement of the robot
-        frontRight.setDirection(DcMotorSimple.Direction.REVERSE); // Reverse direction for right side motors
-        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE); // Reverse direction for left side motors
+        // Revert motor directions to ensure correct movement of the robot
+        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        // Configure the twin tower motor to use the encoder for more precise control
-        twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        twinTowerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Display message to user to indicate that the robot is ready to start
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
-        angler.setPosition(0.3711);
+        angler.setPosition(0.105); // Set the initial position of the angler servo
         // Wait for user to start op mode
         waitForStart();
 
@@ -62,14 +61,25 @@ public class FullDrive extends LinearOpMode {
             // Handle Intake/Outtake
             handleIntakeOutake();
 
-            // Update the telemetry with current chassis and twin tower positions
-
-
+            // Update the telemetry with current twin tower motor position
             telemetry.addData("Twin Tower Motor Position", twinTowerMotor.getCurrentPosition());
+            telemetry.addData("Front Left Motor Power", frontLeft.getPower());
+            telemetry.addData("Front Right Motor Power", frontRight.getPower());
+            telemetry.addData("Back Left Motor Power", backLeft.getPower());
+            telemetry.addData("Back Right Motor Power", backRight.getPower());
+            telemetry.addData("Twin Tower Motor Target Position", twinTowerMotor.getTargetPosition());
+            telemetry.addData("Angler Servo Position", angler.getPosition());
+            telemetry.addData("Rotator Servo Position", rotator.getPosition());
+            telemetry.addData("Gecko Wheel Servo Position", geckowheel.getPosition());
+            telemetry.addData("Twin Tower Motor Mode", twinTowerMotor.getMode());
+            telemetry.addData("Front Left Motor ZeroPowerBehavior", frontLeft.getZeroPowerBehavior());
+            telemetry.addData("Front Right Motor ZeroPowerBehavior", frontRight.getZeroPowerBehavior());
+            telemetry.addData("Back Left Motor ZeroPowerBehavior", backLeft.getZeroPowerBehavior());
+            telemetry.addData("Back Right Motor ZeroPowerBehavior", backRight.getZeroPowerBehavior());
+            telemetry.addData("Twin Tower Motor ZeroPowerBehavior", twinTowerMotor.getZeroPowerBehavior());
             telemetry.update();
-
-            // Wait for 10ms before updating again to prevent rapid looping
-            sleep(10);
+            // Non-blocking delay to improve responsiveness
+            idle();
         }
     }
 
@@ -78,21 +88,21 @@ public class FullDrive extends LinearOpMode {
      */
     private void handleChassisMovement() {
         // Define multipliers for drive, strafe, and turn rates
-        double driveMultiplier = 0.60;
-        double strafeMultiplier = 0.60;
-        double turnMultiplier = 5.0 / 12.0;
+        double driveMultiplier = 0.85;
+        double strafeMultiplier = 0.85;
+        double turnMultiplier = 0.75;
 
         // Check if turbo mode is enabled (using bumpers)
         if (gamepad1.right_bumper || gamepad1.left_bumper) {
             driveMultiplier = 1.0; // Set drive multiplier to full power for turbo mode
             strafeMultiplier = 1.0; // Set strafe multiplier to full power for turbo mode
-            turnMultiplier = 0.89;  // Set turn multiplier to higher value for faster turns
+            turnMultiplier = 0.90;  // Set turn multiplier to higher value for faster turns
         }
 
         // Get joystick input values with exponential scaling for finer control at low speeds
         double drive = -Math.pow(gamepad1.left_stick_y, 3) * driveMultiplier;  // Forward/Backward motion
-        double strafe = -Math.pow(gamepad1.left_stick_x, 3) * strafeMultiplier; // Left/Right strafing motion
-        double turn = -Math.pow(gamepad1.right_stick_x, 3) * turnMultiplier;    // Rotational (turning) motion
+        double strafe = -gamepad1.left_stick_x * strafeMultiplier; // Left/Right strafing motion
+        double turn = gamepad1.right_stick_x * turnMultiplier; // Curvature drive for smoother turning
 
         // Deadzone adjustments for joysticks to prevent drift
         if (Math.abs(drive) < 0.05) drive = 0; // Ignore small inputs for drive
@@ -110,9 +120,18 @@ public class FullDrive extends LinearOpMode {
         moveRobot(strafe, drive, turn);
 
         // Telemetry for chassis movement
+        telemetry.addData("Drive Multiplier", driveMultiplier);
+        telemetry.addData("Strafe Multiplier", strafeMultiplier);
+        telemetry.addData("Turn Multiplier", turnMultiplier);
         telemetry.addData("Drive Power", drive);
         telemetry.addData("Strafe Power", strafe);
         telemetry.addData("Turn Power", turn);
+        telemetry.addData("Left Stick Y", gamepad1.left_stick_y);
+        telemetry.addData("Left Stick X", gamepad1.left_stick_x);
+        telemetry.addData("Right Stick X", gamepad1.right_stick_x);
+        telemetry.addData("Right Bumper Pressed", gamepad1.right_bumper);
+        telemetry.addData("Left Bumper Pressed", gamepad1.left_bumper);
+        telemetry.addData("A Button Pressed", gamepad1.a);
     }
 
     /**
@@ -124,10 +143,10 @@ public class FullDrive extends LinearOpMode {
      */
     public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers based on the desired motions
-        double leftFrontPower = y + x - yaw;
-        double rightFrontPower = y - x + yaw;
-        double leftBackPower = y - x - yaw;
-        double rightBackPower = y + x + yaw;
+        double leftFrontPower = y + x + yaw;
+        double rightFrontPower = y - x - yaw;
+        double leftBackPower = y - x + yaw;
+        double rightBackPower = y + x - yaw;
 
         // Normalize wheel powers to ensure they do not exceed 1.0
         double max = Math.max(1.0, Math.max(Math.abs(leftFrontPower), Math.max(Math.abs(rightFrontPower), Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower)))));
@@ -137,81 +156,111 @@ public class FullDrive extends LinearOpMode {
         leftBackPower /= max;
         rightBackPower /= max;
 
-        // Ramp up power gradually to avoid jerky movements
-        frontLeft.setPower(gradualPower(frontLeft.getPower(), leftFrontPower, 0.1));
-        frontRight.setPower(gradualPower(frontRight.getPower(), rightFrontPower, 0.1));
-        backLeft.setPower(gradualPower(backLeft.getPower(), leftBackPower, 0.1));
-        backRight.setPower(gradualPower(backRight.getPower(), rightBackPower, 0.1));
-    }
+        // Set power to each motor directly without ramp-up to avoid inconsistent timing issues
+        frontLeft.setPower(leftFrontPower);
+        frontRight.setPower(rightFrontPower);
+        backLeft.setPower(leftBackPower);
+        backRight.setPower(rightBackPower);
 
-    /**
-     * Gradually adjust power to avoid sudden changes.
-     *
-     * @param currentPower Current motor power
-     * @param targetPower  Target motor power
-     * @param increment    The maximum allowed change in power per cycle
-     * @return Adjusted power value
-     */
-    private double gradualPower(double currentPower, double targetPower, double increment) {
-        // Increment or decrement power gradually to avoid sudden jumps
-        if (currentPower < targetPower) {
-            return Math.min(currentPower + increment, targetPower);
-        } else if (currentPower > targetPower) {
-            return Math.max(currentPower - increment, targetPower);
-        }
-        return targetPower;
+        // Telemetry for wheel powers
+        telemetry.addData("Left Front Power (Target)", leftFrontPower);
+        telemetry.addData("Right Front Power (Target)", rightFrontPower);
+        telemetry.addData("Left Back Power (Target)", leftBackPower);
+        telemetry.addData("Right Back Power (Target)", rightBackPower);
+        telemetry.addData("Left Front Motor Actual Power", frontLeft.getPower());
+        telemetry.addData("Right Front Motor Actual Power", frontRight.getPower());
+        telemetry.addData("Left Back Motor Actual Power", backLeft.getPower());
+        telemetry.addData("Right Back Motor Actual Power", backRight.getPower());
     }
 
     /**
      * Handle twin tower movement using triggers.
      */
     private void handleTwinTower() {
+        double twinTowerMotorMultiplier = 0.7;
+        if (gamepad1.right_bumper || gamepad1.left_bumper) {
+            twinTowerMotorMultiplier = 1;
+        }
+        if (gamepad1.a) {
+            twinTowerMotorMultiplier *= 0.4;
+        }
         // Use right trigger to move the twin tower motor forward
+        double rtpower = gamepad1.right_trigger * twinTowerMotorMultiplier;
+        double ltpower = gamepad1.left_trigger * twinTowerMotorMultiplier;
         if (gamepad1.right_trigger > 0) {
-            int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger / 1.5 * 1993.6); // Use encoder PPR value to calculate target
-            twinTowerMotor.setTargetPosition(targetPosition);
-            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            twinTowerMotor.setPower(1.0);
+            int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
+            twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
+            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
+            twinTowerMotor.setPower(rtpower); // Set power to move towards the target position
         }
         // Use left trigger to move the twin tower motor backward
         else if (gamepad1.left_trigger > 0) {
-            int targetPosition = twinTowerMotor.getCurrentPosition() - (int) (gamepad1.left_trigger / 1.5 * 1993.6); // Use encoder PPR value to calculate target
-            twinTowerMotor.setTargetPosition(targetPosition);
-            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            twinTowerMotor.setPower(1.0);
+            int targetPosition = twinTowerMotor.getCurrentPosition() - (int) (gamepad1.left_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
+            twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
+            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
+            twinTowerMotor.setPower(ltpower); // Set power to move towards the target position
         } else {
-            twinTowerMotor.setPower(0); // Stop the motor if no trigger is pressed
+            twinTowerMotor.setPower(1); // Stop the motor if no trigger is pressed
         }
 
         // Telemetry for twin tower motor power
         telemetry.addData("Twin Tower Motor Power", twinTowerMotor.getPower());
+        telemetry.addData("Twin Tower Motor Multiplier", twinTowerMotorMultiplier);
+        telemetry.addData("Right Trigger Power", rtpower);
+        telemetry.addData("Left Trigger Power", ltpower);
+        telemetry.addData("Twin Tower Motor Current Position", twinTowerMotor.getCurrentPosition());
+        telemetry.addData("Twin Tower Motor Target Position", twinTowerMotor.getTargetPosition());
+        telemetry.addData("Twin Tower Motor Mode", twinTowerMotor.getMode());
+        telemetry.addData("Right Bumper Pressed", gamepad1.right_bumper);
+        telemetry.addData("Left Bumper Pressed", gamepad1.left_bumper);
+        telemetry.addData("A Button Pressed", gamepad1.a);
+        telemetry.addData("Twin Tower Motor ZeroPowerBehavior", twinTowerMotor.getZeroPowerBehavior());
+        telemetry.addData("Twin Tower Motor Direction", twinTowerMotor.getDirection());
     }
 
     /**
      * Handle intake/outtake mechanism using dpad inputs.
      */
     private void handleIntakeOutake() {
-        if (gamepad1.dpad_up) {
-            rotator.setPosition((double) 180 / 300);
-        }
         if (gamepad1.dpad_down) {
-            rotator.setPosition((double) 0 / 300);
-        }
-        if (gamepad1.a) {
+            // Pick up from perimeter
+            angler.setPosition(0);
             rotator.setPosition(0);
-            angler.setPosition(0);
         }
-        if (gamepad1.dpad_left) {
+        if (gamepad1.dpad_up) {
+            // Put on Upper Chamber
+            angler.setPosition(0);
+            rotator.setPosition(0.6567);
+        }
+
+        if (gamepad1.b && !lastBState) {
+            isIntakeToggled = !isIntakeToggled;
+            lastBState = true;
+        } else if (!gamepad1.b) {
+            lastBState = false;
+        }
+
+        if (isIntakeToggled) {
             geckowheel.setPosition(1);
+        } else {
+            geckowheel.setPosition(0);
         }
+        // Pick up from the ground
         if (gamepad1.dpad_right) {
-            geckowheel.setPosition(-1);
+            rotator.setPosition(0.3115);
+            angler.setPosition(0.1818);
         }
-        if (gamepad1.x) {
-            angler.setPosition((double) 90 / 300);
-        }
-        if (gamepad1.y) {
-            angler.setPosition(0);
-        }
+        // Telemetry for intake/outtake mechanism
+        telemetry.addData("Intake/Outake Mechanism Toggled", isIntakeToggled);
+        telemetry.addData("Angler Position", angler.getPosition());
+        telemetry.addData("Rotator Position", rotator.getPosition());
+        telemetry.addData("Gecko Wheel Position", geckowheel.getPosition());
+        telemetry.addData("Intake Toggled", isIntakeToggled);
+        telemetry.addData("Dpad Up Pressed", gamepad1.dpad_up);
+        telemetry.addData("Dpad Down Pressed", gamepad1.dpad_down);
+        telemetry.addData("B Button Pressed", gamepad1.b);
+        telemetry.addData("Gecko Wheel Direction", geckowheel.getDirection());
+        telemetry.addData("Angler Servo Direction", angler.getDirection());
+        telemetry.addData("Rotator Servo Direction", rotator.getDirection());
     }
 }
