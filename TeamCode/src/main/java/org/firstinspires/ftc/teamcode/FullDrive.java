@@ -16,7 +16,7 @@ public class FullDrive extends LinearOpMode {
     // Define motor objects for each wheel and twin tower
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private DcMotorEx twinTowerMotor;
-    private Servo rotator, geckowheel, angler;
+    private Servo geckowheel;
     private boolean isIntakeToggled = false;
     private boolean lastBState = false;
 
@@ -28,11 +28,8 @@ public class FullDrive extends LinearOpMode {
         backLeft = hardwareMap.get(DcMotor.class, "backleft");
         backRight = hardwareMap.get(DcMotor.class, "backright");
         twinTowerMotor = hardwareMap.get(DcMotorEx.class, "twintower");
-        rotator = hardwareMap.get(Servo.class, "rotator");
         geckowheel = hardwareMap.get(Servo.class, "geckowheel");
-        angler = hardwareMap.get(Servo.class, "angler");
         twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        angler.setDirection(Servo.Direction.REVERSE); // Set the angler servo to reverse direction
         twinTowerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER); // Set the motor to RUN_USING_ENCODER when not moving to a specific position
         // Set zero power behavior for each motor to BRAKE, which helps hold the position when no power is applied
         DcMotor[] motors = {frontLeft, frontRight, backLeft, backRight, twinTowerMotor};
@@ -49,7 +46,6 @@ public class FullDrive extends LinearOpMode {
         // Display message to user to indicate that the robot is ready to start
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
-        angler.setPosition(0.105); // Set the initial position of the angler servo
         // Wait for user to start op mode
         waitForStart();
 
@@ -68,8 +64,6 @@ public class FullDrive extends LinearOpMode {
             telemetry.addData("Back Left Motor Power", backLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
             telemetry.addData("Twin Tower Motor Target Position", twinTowerMotor.getTargetPosition());
-            telemetry.addData("Angler Servo Position", angler.getPosition());
-            telemetry.addData("Rotator Servo Position", rotator.getPosition());
             telemetry.addData("Gecko Wheel Servo Position", geckowheel.getPosition());
             telemetry.addData("Twin Tower Motor Mode", twinTowerMotor.getMode());
             telemetry.addData("Front Left Motor ZeroPowerBehavior", frontLeft.getZeroPowerBehavior());
@@ -185,23 +179,23 @@ public class FullDrive extends LinearOpMode {
             twinTowerMotorMultiplier *= 0.4;
         }
         // Use right trigger to move the twin tower motor forward
-        double rtpower = gamepad1.right_trigger * twinTowerMotorMultiplier;
-        double ltpower = gamepad1.left_trigger * twinTowerMotorMultiplier;
-        if (gamepad1.right_trigger > 0) {
-            int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
-            twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
-            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
-            twinTowerMotor.setPower(rtpower); // Set power to move towards the target position
-        }
-        // Use left trigger to move the twin tower motor backward
-        else if (gamepad1.left_trigger > 0) {
-            int targetPosition = twinTowerMotor.getCurrentPosition() - (int) (gamepad1.left_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
-            twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
-            twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
-            twinTowerMotor.setPower(ltpower); // Set power to move towards the target position
-        } else {
-            twinTowerMotor.setPower(1); // Stop the motor if no trigger is pressed
-        }
+            double rtpower = gamepad1.right_trigger * twinTowerMotorMultiplier;
+            double ltpower = gamepad1.left_trigger * twinTowerMotorMultiplier;
+            if (gamepad1.right_trigger > 0) {
+                int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
+                twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
+                twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
+                twinTowerMotor.setPower(rtpower); // Set power to move towards the target position
+            }
+            // Use left trigger to move the twin tower motor backward
+            else if (gamepad1.left_trigger > 0) {
+                int targetPosition = twinTowerMotor.getCurrentPosition() - (int) (gamepad1.left_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
+                twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
+                twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
+                twinTowerMotor.setPower(ltpower); // Set power to move towards the target position
+            } else {
+                twinTowerMotor.setPower(1); // Stop the motor if no trigger is pressed
+            }
 
         // Telemetry for twin tower motor power
         telemetry.addData("Twin Tower Motor Power", twinTowerMotor.getPower());
@@ -222,17 +216,6 @@ public class FullDrive extends LinearOpMode {
      * Handle intake/outtake mechanism using dpad inputs.
      */
     private void handleIntakeOutake() {
-        if (gamepad1.dpad_down) {
-            // Pick up from perimeter
-            angler.setPosition(0);
-            rotator.setPosition(0);
-        }
-        if (gamepad1.dpad_up) {
-            // Put on Upper Chamber
-            angler.setPosition(0);
-            rotator.setPosition(0.6567);
-        }
-
         if (gamepad1.b && !lastBState) {
             isIntakeToggled = !isIntakeToggled;
             lastBState = true;
@@ -245,22 +228,13 @@ public class FullDrive extends LinearOpMode {
         } else {
             geckowheel.setPosition(0);
         }
-        // Pick up from the ground
-        if (gamepad1.dpad_right) {
-            rotator.setPosition(0.3115);
-            angler.setPosition(0.1818);
-        }
         // Telemetry for intake/outtake mechanism
         telemetry.addData("Intake/Outake Mechanism Toggled", isIntakeToggled);
-        telemetry.addData("Angler Position", angler.getPosition());
-        telemetry.addData("Rotator Position", rotator.getPosition());
         telemetry.addData("Gecko Wheel Position", geckowheel.getPosition());
         telemetry.addData("Intake Toggled", isIntakeToggled);
         telemetry.addData("Dpad Up Pressed", gamepad1.dpad_up);
         telemetry.addData("Dpad Down Pressed", gamepad1.dpad_down);
         telemetry.addData("B Button Pressed", gamepad1.b);
         telemetry.addData("Gecko Wheel Direction", geckowheel.getDirection());
-        telemetry.addData("Angler Servo Direction", angler.getDirection());
-        telemetry.addData("Rotator Servo Direction", rotator.getDirection());
     }
 }
