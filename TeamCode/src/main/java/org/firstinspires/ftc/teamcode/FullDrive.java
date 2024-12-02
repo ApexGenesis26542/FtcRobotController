@@ -95,7 +95,7 @@ public class FullDrive extends LinearOpMode {
 
         // Get joystick input values with exponential scaling for finer control at low speeds
         double drive = -Math.pow(gamepad1.left_stick_y, 3) * driveMultiplier;  // Forward/Backward motion
-        double strafe = -gamepad1.left_stick_x * strafeMultiplier; // Left/Right strafing motion
+        double strafe = gamepad1.left_stick_x * strafeMultiplier; // Left/Right strafing motion
         double turn = gamepad1.right_stick_x * turnMultiplier; // Curvature drive for smoother turning
 
         // Deadzone adjustments for joysticks to prevent drift
