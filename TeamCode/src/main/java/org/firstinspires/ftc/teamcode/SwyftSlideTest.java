@@ -19,17 +19,17 @@ public class SwyftSlideTest extends LinearOpMode {
 
         // Motor configuration settings
         final int MAX_EXTENSION_TICKS = 810; // Assuming 5377 ticks equals 23 inches based on encoder resolution
-        double twinTowerMotorMultiplier = 1993.6; // Example multiplier for target position calculation
+        double swyftSlideMotorMultiplier = 1993.6; // Example multiplier for target position calculation
 
         waitForStart();
 
         while (opModeIsActive()) {
-            double rtpower = gamepad1.right_trigger * twinTowerMotorMultiplier;
-            double ltpower = gamepad1.left_trigger * twinTowerMotorMultiplier;
+            double rtpower = gamepad1.right_trigger * swyftSlideMotorMultiplier;
+            double ltpower = gamepad1.left_trigger * swyftSlideMotorMultiplier;
 
             // Move the slide up when right trigger is pressed
             if (gamepad1.right_trigger > 0) {
-                int targetPosition = slide.getCurrentPosition() + (int) (gamepad1.right_trigger * twinTowerMotorMultiplier);
+                int targetPosition = slide.getCurrentPosition() + (int) (gamepad1.right_trigger * swyftSlideMotorMultiplier);
                 targetPosition = Math.min(targetPosition, MAX_EXTENSION_TICKS); // Soft limit for maximum extension
                 slide.setTargetPosition(targetPosition);
                 slide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -37,7 +37,7 @@ public class SwyftSlideTest extends LinearOpMode {
             }
             // Move the slide down when left trigger is pressed
             else if (gamepad1.left_trigger > 0) {
-                int targetPosition = slide.getCurrentPosition() - (int) (gamepad1.left_trigger * twinTowerMotorMultiplier);
+                int targetPosition = slide.getCurrentPosition() - (int) (gamepad1.left_trigger * swyftSlideMotorMultiplier);
                 targetPosition = Math.max(targetPosition, 0); // Soft limit to prevent negative position
                 slide.setTargetPosition(targetPosition);
                 slide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
