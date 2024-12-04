@@ -11,10 +11,10 @@ public class IntakeCalibration extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo rotator = hardwareMap.get(Servo.class, "rotator");
         Servo angler = hardwareMap.get(Servo.class, "angler");
         DcMotorEx twinTowerMotor = hardwareMap.get(DcMotorEx.class, "twintower");
-        angler.setDirection(Servo.Direction.REVERSE);
 
         // Configure the motor to use the encoder for more precise control
         twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -64,7 +64,7 @@ public class IntakeCalibration extends LinearOpMode {
                 rotator.setPosition(0);
                 angler.setPosition(0);
             }
-            if (gamepad1.y) {
+            if (gamepad1.left_stick_button || gamepad1.right_stick_button) {
                 if (gamepad1.right_trigger > 0) {
                     int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger * 1993.6); // Use encoder PPR value to calculate target
                     twinTowerMotor.setTargetPosition(targetPosition);
