@@ -57,7 +57,7 @@ public class FullDrive extends LinearOpMode {
         }
 
         // Revert motor directions to ensure correct movement of the robot
-        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
         backRight.setDirection(DcMotorSimple.Direction.REVERSE);
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -297,10 +297,10 @@ public class FullDrive extends LinearOpMode {
         }
         */
         if (gamepad1.right_stick_button) {
-            claw.setPosition(0.685);
+            claw.setPosition(1);
         }
         if (gamepad1.left_stick_button) {
-            claw.setPosition(0);
+            claw.setPosition(0.3);
         }
         // Telemetry for intake/outtake mechanism
         telemetry.addData("Intake/Outake Mechanism Toggled", isOuttakeToggled);
