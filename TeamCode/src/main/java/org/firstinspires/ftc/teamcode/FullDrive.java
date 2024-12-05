@@ -24,7 +24,7 @@ public class FullDrive extends LinearOpMode {
     private Servo geckowheel, angler, claw;
     private boolean isOuttakeToggled = false;
     private boolean lastBState = false;
-
+    
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize the motors for chassis and twin tower
