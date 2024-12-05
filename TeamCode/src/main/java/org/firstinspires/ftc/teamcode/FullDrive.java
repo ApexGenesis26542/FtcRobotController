@@ -24,8 +24,7 @@ public class FullDrive extends LinearOpMode {
     private Servo geckowheel, angler, claw;
     private boolean isOuttakeToggled = false;
     private boolean lastBState = false;
-    private boolean lastUpState = false;
-    private boolean isAnglerToggled = false;
+
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize the motors for chassis and twin tower
@@ -202,6 +201,7 @@ public class FullDrive extends LinearOpMode {
         double ttltpower = gamepad1.left_trigger * twinTowerMotorMultiplier;
         if (gamepad1.right_trigger > 0) {
             int targetPosition = twinTowerMotor.getCurrentPosition() + (int) (gamepad1.right_trigger * 1993.6); // Calculate target position based on trigger input and encoder PPR
+            targetPosition = Math.min(targetPosition, 1);
             twinTowerMotor.setTargetPosition(targetPosition); // Set the target position for the motor
             twinTowerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // Set the motor to run to the target position
             twinTowerMotor.setPower(ttrtpower); // Set power to move towards the target position
@@ -259,7 +259,7 @@ public class FullDrive extends LinearOpMode {
         if (gamepad1.dpad_up) {
             angler.setPosition(0.7);
         }
-        if (gamepad1.dpad_down){
+        if (gamepad1.dpad_down) {
             angler.setPosition(1);
         }
 
