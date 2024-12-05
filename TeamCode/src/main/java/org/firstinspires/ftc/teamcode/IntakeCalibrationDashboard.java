@@ -12,13 +12,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class IntakeCalibrationDashboard extends LinearOpMode {
     public static double clawpos = 0;
     public static double anglerpos = 0;
-
+    public static Servo.Direction clawdirection = Servo.Direction.FORWARD;
+    public static Servo.Direction anglerdirection = Servo.Direction.FORWARD;
     @Override
     public void runOpMode() {
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo angler = hardwareMap.get(Servo.class, "angler");
         DcMotorEx twinTowerMotor = hardwareMap.get(DcMotorEx.class, "twintower");
-
         // Configure the motor to use the encoder for more precise control
         twinTowerMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         twinTowerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -26,6 +26,8 @@ public class IntakeCalibrationDashboard extends LinearOpMode {
         waitForStart();
         while (opModeIsActive()) {
             if (gamepad1.right_stick_button || gamepad1.left_stick_button) {
+                angler.setDirection(anglerdirection);
+                claw.setDirection(clawdirection);
                 angler.setPosition(anglerpos);
                 claw.setPosition(clawpos);
             }
