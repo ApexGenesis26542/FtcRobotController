@@ -9,14 +9,11 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
 @Config
-public class IntakeCalibrationDashboard extends LinearOpMode {
-    public static double clawpos = 0;
+public class IntakeOuttakeCalibrationDashboard extends LinearOpMode {
     public static double anglerpos = 0;
-    public static Servo.Direction clawdirection = Servo.Direction.FORWARD;
     public static Servo.Direction anglerdirection = Servo.Direction.FORWARD;
     @Override
     public void runOpMode() {
-        Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo angler = hardwareMap.get(Servo.class, "angler");
         DcMotorEx twinTowerMotor = hardwareMap.get(DcMotorEx.class, "twintower");
         // Configure the motor to use the encoder for more precise control
@@ -27,9 +24,7 @@ public class IntakeCalibrationDashboard extends LinearOpMode {
         while (opModeIsActive()) {
             if (gamepad1.right_stick_button || gamepad1.left_stick_button) {
                 angler.setDirection(anglerdirection);
-                claw.setDirection(clawdirection);
                 angler.setPosition(anglerpos);
-                claw.setPosition(clawpos);
             }
 
             if (gamepad1.y) {
@@ -48,7 +43,6 @@ public class IntakeCalibrationDashboard extends LinearOpMode {
             }
             telemetry.addData("Current Angler Angle in Degrees", angler.getPosition() * 300);
             telemetry.addData("Current Angler Position", angler.getPosition());
-            telemetry.addData("Current Claw Position", claw.getPosition());
             telemetry.addData("Current Twin Tower Motor Power", twinTowerMotor.getPower());
             telemetry.addData("Current Twin Tower Motor Position", twinTowerMotor.getCurrentPosition());
             telemetry.update();
