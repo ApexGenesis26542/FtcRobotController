@@ -1,24 +1,27 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
+@Config
 @TeleOp
+
 public class SwyftSlideTest extends LinearOpMode {
+    public static int MAX_EXTENSION_TICKS = 99999; // Assuming 5377 ticks equals 23 inches based on encoder resolution
     @Override
     public void runOpMode() {
         DcMotor slide;
         slide = hardwareMap.get(DcMotor.class, "slides");
 
         // Set up the motor with encoder settings
+        slide.setTargetPosition(0);
         slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         slide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Motor configuration settings
-        final int MAX_EXTENSION_TICKS = 810; // Assuming 5377 ticks equals 23 inches based on encoder resolution
         double swyftSlideMotorMultiplier = 1993.6; // Example multiplier for target position calculation
 
         waitForStart();
@@ -44,7 +47,7 @@ public class SwyftSlideTest extends LinearOpMode {
                 slide.setPower(ltpower);
             } else {
                 // Set motor power to zero if neither trigger is pressed
-                slide.setPower(0);
+                slide.setPower(1);
             }
 
             // Telemetry for debugging purposes
