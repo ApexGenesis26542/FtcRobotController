@@ -31,6 +31,6 @@ public class SwyftSlideCalibration extends LinearOpMode {
         }
 
         // Stop the motor once the op mode is no longer active
-        slide.setPower(0);
+        slide.setPower(1);
     }
 }
